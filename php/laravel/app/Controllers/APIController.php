@@ -46,4 +46,46 @@ class InternalController extends Controller
 
         return $exportService->download();
     }
+ 
+    public function simpleExportCsv()
+    {
+        header("Content-type:text/csv");
+        header("Content-Disposition:attachment;filename=download.csv");
+        $output = fopen('php://output', 'w');
+
+        $keys = ['id', 'created_at'];
+        $column = [
+            'id' => 'ID',
+            'created_at' => '提交时间',
+        ];
+
+        $row = [];
+        foreach ($keys as $k) {
+            if (isset($column[$k])) {
+                $row[] = mb_convert_encoding($column[$k], 'gb2312', 'utf8');
+            } else {
+                $row[] = $k;
+            }
+        }
+        fputcsv($output, $row);
+
+        foreach ($wenjuans as $w) {
+            $row = [];
+            foreach ($keys as $k) {
+                if ($k == 'content' || $k == 'description') {
+                    $getAttributes = strip_tags($w->getAttributes()[$k]);
+                    $row[] = mb_convert_encoding($getAttributes, 'gb2312', 'utf8');
+                } elseif ($k == 'imgurls') {
+                    $getAttributes = implode(json_decode($w->getAttributes()[$k], true));
+                    $row[] = mb_convert_encoding($getAttributes, 'gb2312', 'utf8');
+                } else {
+                    $row[] = mb_convert_encoding($w->getAttributes()[$k], 'gb2312', 'utf8');
+                }
+
+            }
+            fputcsv($output, $row);
+        }
+        fclose($output);
+        return;
+    }
 }
